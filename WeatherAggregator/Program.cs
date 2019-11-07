@@ -34,6 +34,8 @@ namespace WeatherAggregator
             string[] rainData;
             string prevYear = "";
             string prevMonth = "";
+            int prevLongRunningTotal = 0;   //Cumulative of the longest number of days rained
+            int currLongRunningTotal = 0;
 
             try
             {
@@ -50,10 +52,24 @@ namespace WeatherAggregator
                     }
                     if (prevYear != "" && prevYear != rainData[0])
                     {
-                        rainfall.CreateYearlyAggregateRecord(Convert.ToInt32(prevYear));
+                        rainfall.CreateYearlyAggregateRecord(Convert.ToInt32(prevYear), prevLongRunningTotal);
+                        prevLongRunningTotal = currLongRunningTotal = 0;
                     }
 
+                    //Only when rain is non-zero positive, we count it
                     rainfall.CreateDailyRainfallRecord(rainData);
+                    if (Convert.ToDecimal(rainData[3]) > 0)
+                    {
+                        currLongRunningTotal++;
+                    }
+                    else
+                    {
+                        if(prevLongRunningTotal < currLongRunningTotal)
+                            prevLongRunningTotal = currLongRunningTotal;
+
+                        currLongRunningTotal = 0;   //reset longestNumberOfDaysRaining
+                    }
+
                     prevMonth = rainData[1];
                     prevYear = rainData[0];
                 }
@@ -61,7 +77,7 @@ namespace WeatherAggregator
                 //Add the last Monthly Aggregate
                 rainfall.CreateMonthlyAggregateRecord(Convert.ToInt32(prevMonth), Convert.ToInt32(prevYear));
                 //Add the last Yearly Aggregate
-                rainfall.CreateYearlyAggregateRecord(Convert.ToInt32(prevYear));
+                rainfall.CreateYearlyAggregateRecord(Convert.ToInt32(prevYear), Math.Max(prevLongRunningTotal, currLongRunningTotal));
 
                 //Get the entire JSON
                 Console.WriteLine(rainfall.GetYearlyAggregatedRainfallAsJson());

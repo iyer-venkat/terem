@@ -19,7 +19,7 @@ namespace WeatherAggregator.Models
             DailyRainData = new List<DailyRainData>();
         }
 
-        public void CreateYearlyAggregateRecord(int year)
+        public void CreateYearlyAggregateRecord(int year, int longestNumberOfDaysRaining)
         {
             YearlyAggregates.Add(new YearlyAggregates
             {
@@ -30,7 +30,8 @@ namespace WeatherAggregator.Models
                 AverageDailyRainfall = Math.Round(MonthlyAggregates.Sum(m => m.AverageDailyRainfall), 2),
                 DaysWithNoRainfall = MonthlyAggregates.Sum(m => m.DaysWithNoRainfall),
                 DaysWithRainfall = MonthlyAggregates.Sum(m => m.DaysWithRainfall),
-                MonthlyAggregates = MonthlyAggregates.ToList()
+                LongestNumberOfDaysRaining = longestNumberOfDaysRaining,
+                MonthlyAggregates = MonthlyAggregates.ToList(),
             });
             MonthlyAggregates.Clear();
         }
@@ -44,10 +45,10 @@ namespace WeatherAggregator.Models
                 LastRecordedDate = DailyRainData[DailyRainData.Count - 1].DateRecorded,
                 TotalRainfall = Math.Round(DailyRainData.Sum(d => d.Rainfall), 2),
                 AverageDailyRainfall = Math.Round(DailyRainData.Average(d => d.Rainfall), 2),
-                DaysWithRainfall = DailyRainData.Count,
+                DaysWithRainfall = DailyRainData.Where(dr => dr.Rainfall > 0).Count(),
                 DaysWithNoRainfall = (!IsLeapYear(year) && month == February) ?
-                                        Dictionaries.MonthDays[month] - 1 - DailyRainData.Count :
-                                        Dictionaries.MonthDays[month] - DailyRainData.Count
+                                        Dictionaries.MonthDays[month] - 1 - DailyRainData.Where(dr => dr.Rainfall > 0).Count() :
+                                        Dictionaries.MonthDays[month] - DailyRainData.Where(dr => dr.Rainfall > 0).Count()
             });
             DailyRainData.Clear();
         }
